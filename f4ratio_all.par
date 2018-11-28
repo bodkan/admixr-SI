@@ -1,0 +1,4 @@
+genotypename: ./snps.geno
+snpname: ./snps.snp
+indivname: ./snps.ind
+popfilename: ./f4ratio.pop

@@ -1,0 +1,225 @@
+---
+title: "Appendix"
+output:
+  pdf_document:
+    highlight: NULL
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, comment = NA)
+```
+
+
+
+
+
+All files used in this document can be found at: https://github.com/bodkan/admixr-SI.
+
+
+
+
+# Estimating the proportions of Neandertal ancestry
+
+
+
+Our goal is to estimate Neandertal ancestry in some present-day European
+individuals using the following $f_4$-ratio statistic:
+
+$$\alpha = \frac{f_4(\textrm{Altai Neandertal, Chimpanzee; European X, African})}{f_4(\textrm{Altai Neandertal, Chimpanzee; Vindija Neandertal, African})}.$$
+
+We will demonstrate how to accomplish this using:
+
+a) a traditional ADMIXTOOLS workflow;
+
+b) a new workflow with the _admixr_ R package.
+
+
+\pagebreak
+
+
+## a) A traditional ADMIXTOOLS workflow
+
+To perform this analysis using a traditional ADMIXTOOLS workflow we have to do
+the following:
+
+1. Create a `pop` file (`f4ratio.pop`).
+
+This file specifies the order of populations in the $f_4$ statistic calculation
+above, and will contain the following (one $f_4$-ratio setup per row, as
+required by ADMIXTOOLS):
+
+```{bash, echo = FALSE}
+cat f4ratio.pop
+```
+
+2. Create a `par` file (`f4ratio_all.par`).
+
+This is the main configuration file and contains the paths to a trio of EIGENSTRAT
+components and a path to the `pop` file created in the previous step:
+
+```{bash, echo = FALSE}
+cat f4ratio_all.par
+```
+
+3. Run the `qpF4ratio` command-line program and capture its output:
+
+
+```{bash}
+qpF4ratio -p f4ratio_all.par > f4ratio_all.log
+```
+
+4. Inspect the output file (`f4ratio_all.log`) and extract the relevant values.
+
+To extract the values of interest we could either copy-paste them manually into
+Excel, or extract them using a combination of grep/awk/sed and save them into a
+text file for further analysis (we will omit these steps in this Appendix).
+
+\pagebreak
+
+## b) A new workflow using the _admixr_ package
+
+We can accomplish the same task by running the following R code, which will
+perform all the low-level configuration and parsing work automatically,
+returning a simple R dataframe object.
+
+```{r}
+library(admixr)
+
+results <- f4ratio(
+  X = c("French", "Sardinian", "Czech"),
+  A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp",
+  data = eigenstrat("snps")
+)
+
+results
+```
+
+
+
+\pagebreak
+
+
+# Estimate Neandertal ancestry proportions on a subset of the data.
+
+Let's investiate a variation of the analysis above, this time estimating
+Neandertal ancestry proportions in a subset of the genome (in a set of regions
+specified in a BED file `regions.bed`).
+
+## a) A traditional ADMIXTOOLS workflow
+
+All ADMIXTOOLS commands accept a parameter `badsnpname: <snp file>` in a `par`
+file, which directs ADMIXTOOLS to ignore SNPs at specified coordinates.
+
+In a traditional ADMIXTOOLS workflow we would have to create this file using
+some form of shell scripting. For example, we could do the following:
+
+1. Convert the EIGENSTRAT snp file into a BED format:
+
+```{bash}
+awk -v OFS='\t' '{print $2, $4 - 1, $4, $0}' snps.snp > snps.bed
+```
+
+2. Intersect the newly generated BED file with coordinates of regions in
+`reigons.bed`, keeping those sites that fall outside of those regions and
+saving them in a `snp` format again:
+
+
+```{bash}
+bedtools intersect -v -a snps.bed -b regions.bed | cut -f 4- > excluded_sites.snp
+```
+
+3. Create a new `par` file called `f4ratio_subset.par`, setting the `badsnpname`
+parameter to `excluded_sites.snp`:
+
+```{bash, echo = FALSE}
+cat f4ratio_subset.par
+```
+
+4. Run `qpF4ratio` with the new `par` file and capture its output:
+
+```{bash}
+qpF4ratio -p f4ratio_subset.par > f4ratio_subset.log
+```
+
+5. Extract the relevant values from the output file (`f4ratio_subset.log`).
+
+
+
+
+\pagebreak
+
+
+
+
+## b) A new workflow using the _admixr_ package
+
+
+
+Using the _admixr_ package, we can use the function `filter_bed()` to do the
+filtering work without the need for cumbersome and error-prone shell scripting:
+
+```{r}
+library(admixr)
+
+snps <- eigenstrat("snps") # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+subset <- filter_bed(snps, "regions.bed") # create a new EIGENSTRAT object
+
+results <- f4ratio(
+  X = c("French", "Sardinian", "Czech"),
+  A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp",
+  data = subset
+)
+
+results
+```
+
+
+
+Furthermore, because all _admixr_ functions are inspired by the "tidyverse"
+philosophy, we can utilize the `%>%` pipe operator from the `magrittr` package
+and run the whole analysis in one step:
+
+```{r}
+library(admixr)
+library(magrittr)
+
+results <-
+  eigenstrat("snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+  filter_bed("regions.bed") %>% # create a new EIGENSTRAT object and pass it further
+  f4ratio(
+    X = c("French", "Sardinian", "Czech"),
+    A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp"
+  )
+
+results
+```
+
+
+
+
+
+\pagebreak
+
+
+
+# A more complex example
+
+The "pipe-friendly" nature of _admixr_ makes it possible to compose even more
+complex pipelines, such as the following:
+
+```{r}
+library(admixr)
+library(magrittr)
+
+results <-
+  eigenstrat("snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+  relabel(Europeans = c("French", "Sardinian", "Czech")) %>%
+  filter_bed("regions.bed") %>%
+  transversions_only() %>%
+  f4ratio(X = "Europeans", A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp")
+
+results
+```
+
+Accomplishing the same taks using pure shell scripting would require
+a significant amount of work.
