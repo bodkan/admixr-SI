@@ -85,13 +85,11 @@ parsing work (steps 1-4 above) automatically, returning a simple R dataframe:
 ```{r}
 library(admixr)
 
-results <- f4ratio(
+f4ratio(
   X = c("French", "Sardinian", "Czech"),
   A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp",
   data = eigenstrat("data/snps")
 )
-
-results
 ```
 
 
@@ -161,13 +159,11 @@ library(admixr)
 snps <- eigenstrat("data/snps") # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
 subset <- filter_bed(snps, "regions.bed") # create a new EIGENSTRAT object
 
-results <- f4ratio(
+f4ratio(
   X = c("French", "Sardinian", "Czech"),
   A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp",
   data = subset
 )
-
-results
 ```
 
 
@@ -179,15 +175,12 @@ and run the whole analysis in one step:
 library(admixr)
 library(magrittr)
 
-results <-
-  eigenstrat("data/snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
-  filter_bed("regions.bed") %>% # create a new EIGENSTRAT object and pass it further
-  f4ratio(
-    X = c("French", "Sardinian", "Czech"),
-    A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp"
-  )
-
-results
+eigenstrat("data/snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+filter_bed("regions.bed") %>% # create a new EIGENSTRAT object and pass it further
+f4ratio(
+  X = c("French", "Sardinian", "Czech"),
+  A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp"
+)
 ```
 
 
@@ -202,14 +195,11 @@ complex pipelines, such as the following:
 library(admixr)
 library(magrittr)
 
-results <-
-  eigenstrat("data/snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
-  relabel(Europeans = c("French", "Sardinian", "Czech")) %>%
-  filter_bed("regions.bed") %>%
-  transversions_only() %>%
-  f4ratio(X = "Europeans", A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp")
-
-results
+eigenstrat("data/snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+relabel(Europeans = c("French", "Sardinian", "Czech")) %>%
+filter_bed("regions.bed") %>%
+transversions_only() %>%
+f4ratio(X = "Europeans", A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp")
 ```
 
 Accomplishing the same taks using pure shell scripting would require
