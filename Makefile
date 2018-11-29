@@ -1,7 +1,7 @@
-all: SI.pdf
+all: SI.docx
 
-SI.pdf: SI.Rmd
+SI.docx: SI.Rmd
 	Rscript -e 'rmarkdown::render("$<")'
 
 clean:
-	rm -f snps.bed *.log excluded_sites.snp
+	rm -f SI.docx snps.bed *.log excluded_sites.snp

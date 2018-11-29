@@ -1,5 +1,5 @@
-genotypename: ./snps.geno
-snpname: ./snps.snp
-indivname: ./snps.ind
+genotypename: ./data/snps.geno
+snpname: ./data/snps.snp
+indivname: ./data/snps.ind
 popfilename: ./f4ratio.pop
 badsnpname: ./excluded_sites.snp
