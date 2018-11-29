@@ -156,7 +156,7 @@ all filtering automatically:
 ```{r}
 library(admixr)
 
-snps <- eigenstrat("data/snps") # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+snps <- eigenstrat("data/snps")
 subset <- filter_bed(snps, "regions.bed") # create a new EIGENSTRAT object
 
 f4ratio(
@@ -175,7 +175,7 @@ and run the whole analysis in one step:
 library(admixr)
 library(magrittr)
 
-eigenstrat("data/snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+eigenstrat("data/snps") %>%
 filter_bed("regions.bed") %>% # create a new EIGENSTRAT object and pass it further
 f4ratio(
   X = c("French", "Sardinian", "Czech"),
@@ -195,7 +195,7 @@ complex pipelines, such as the following:
 library(admixr)
 library(magrittr)
 
-eigenstrat("data/snps") %>% # trio of EIGENSTRAT files is: snps.{ind,snp,geno}
+eigenstrat("data/snps") %>%
 relabel(Europeans = c("French", "Sardinian", "Czech")) %>%
 filter_bed("regions.bed") %>%
 transversions_only() %>%
