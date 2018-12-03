@@ -1,5 +1,5 @@
 ---
-title: "Appendix"
+title: "Supplementary Information"
 output:
   word_document:
     highlight: NULL
@@ -16,6 +16,9 @@ knitr::opts_chunk$set(echo = TRUE, comment = NA)
 All files used in this document and its source in R Markdown can be found at:
 https://github.com/bodkan/admixr-SI.
 
+A complete description of the functionality of the _admixr_ package can be found
+in the tutorial vignette at: https://bodkan.net/admixr/articles/tutorial.html
+
 
 
 
@@ -24,7 +27,8 @@ https://github.com/bodkan/admixr-SI.
 
 
 Our goal is to estimate the proportions of Neandertal ancestry in a set of
-present-day European individuals using the following $f_4$-ratio statistic:
+present-day European individuals (French, Sardinian and Czech) using the
+following $f_4$-ratio statistic:
 
 $$\alpha = \frac{f_4(\textrm{Altai Neandertal, Chimpanzee; European X, African})}{f_4(\textrm{Altai Neandertal, Chimpanzee; Vindija Neandertal, African})}.$$
 
@@ -66,12 +70,12 @@ cat f4ratio_all.par
 qpF4ratio -p f4ratio_all.par > f4ratio_all.log
 ```
 
-4. Inspect the output file (`f4ratio_all.log`) and extract the relevant values:
+4. Inspect the output file (`f4ratio_all.log`) and extract the relevant values.
 
 To extract the values of interest (on lines beginning with "result:"), we could
 either copy-paste them manually into Excel, or extract them using a combination
 of grep/awk/sed and save them into a text file for further analysis (we will
-omit these steps in this Appendix).
+omit these steps here).
 
 ```{bash, echo = FALSE}
 cat f4ratio_all.log
@@ -80,16 +84,18 @@ cat f4ratio_all.log
 ## b) A new workflow using the _admixr_ package
 
 Running the following R code will perform all the low-level configuration and
-parsing work (steps 1-4 above) automatically, returning a simple R dataframe:
+parsing work (steps 1-4 above) automatically, returning a simple R data frame:
 
 ```{r}
 library(admixr)
 
-f4ratio(
+result <- f4ratio(
   X = c("French", "Sardinian", "Czech"),
   A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp",
   data = eigenstrat("data/snps")
 )
+
+result
 ```
 
 
@@ -115,10 +121,8 @@ awk -v OFS='\t' '{print $2, $4 - 1, $4, $0}' data/snps.snp > snps.bed
 ```
 
 2. Intersect the newly generated BED file with coordinates of regions in
-`reigons.bed`.
-
-We want to keep only those sites that fall outside of those regions and saving
-them in a `snp` format again.
+`reigons.bed`. We want to keep only those sites that fall outside of those
+regions and saving them in a `snp` format again.
 
 ```{bash}
 bedtools intersect -v -a snps.bed -b regions.bed \
@@ -139,7 +143,7 @@ cat f4ratio_subset.par
 qpF4ratio -p f4ratio_subset.par > f4ratio_subset.log
 ```
 
-5. Extract the relevant values from the output file (`f4ratio_subset.log`).
+5. Extract the relevant values from the output file (`f4ratio_subset.log`):
 
 ```{bash, echo = FALSE}
 cat f4ratio_subset.log
@@ -159,28 +163,33 @@ library(admixr)
 snps <- eigenstrat("data/snps")
 subset <- filter_bed(snps, "regions.bed") # create a new EIGENSTRAT object
 
-f4ratio(
+result <- f4ratio(
   X = c("French", "Sardinian", "Czech"),
   A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp",
   data = subset
 )
+
+result
 ```
 
 
-Furthermore, because all _admixr_ functions are inspired by the "tidyverse"
-philosophy, we can utilize the `%>%` pipe operator from the `magrittr` package
+Furthermore, because all _admixr_ functions are inspired by the "tidyverse
+philosophy", we can utilize the `%>%` pipe operator from the `magrittr` package
 and run the whole analysis in one step:
 
 ```{r}
 library(admixr)
 library(magrittr)
 
-eigenstrat("data/snps") %>%
-filter_bed("regions.bed") %>% # create a new EIGENSTRAT object and pass it further
-f4ratio(
-  X = c("French", "Sardinian", "Czech"),
-  A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp"
-)
+result <-
+  eigenstrat("data/snps") %>%
+  filter_bed("regions.bed") %>%
+  f4ratio(
+    X = c("French", "Sardinian", "Czech"),
+    A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp"
+  )
+
+result
 ```
 
 
@@ -195,11 +204,17 @@ complex pipelines, such as the following:
 library(admixr)
 library(magrittr)
 
-eigenstrat("data/snps") %>%
-relabel(Europeans = c("French", "Sardinian", "Czech")) %>%
-filter_bed("regions.bed") %>%
-transversions_only() %>%
-f4ratio(X = "Europeans", A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp")
+result <-
+  eigenstrat("data/snps") %>%
+  relabel(Europeans = c("French", "Sardinian", "Czech")) %>%
+  filter_bed("regions.bed") %>%
+  transversions_only() %>%
+  f4ratio(
+    X = "Europeans",
+    A = "Altai", B = "Vindija", C = "Yoruba", O = "Chimp"
+  )
+
+result
 ```
 
 Accomplishing the same taks using pure shell scripting would require
